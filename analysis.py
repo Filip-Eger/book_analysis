@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 """
-Analýza knih - extrakce klíčových slov pomocí TF-IDF
+Analýza knih - extrakce klíčových slov pomocí TF-IDF a počítání frekvencí
 """
 
 import os
 import re
+from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
-import nltk
-from nltk.tokenize import word_tokenize
-
-# Stáhnout potřebné zdroje pro nltk (proved jednou)
-nltk.download('punkt')
-nltk.download('stopwords')
+from datetime import datetime
 
 # Definice českých stopwords
 CZECH_STOPWORDS = {
@@ -22,17 +18,37 @@ CZECH_STOPWORDS = {
     'přitom', 'nicméně', 'ovšem', 'ať', 'či', 'kterak', 'kterýkoli', 'kdokoliv', 'kdekdo', 'můj', 'tvůj', 'já',
     'ty', 'on', 'ona', 'ono', 'my', 'vy', 'oni', 'ony', 'sebe', 'sobě', 'sebou', 'sám', 'sama', 'samo', 'jiný',
     'jiná', 'jiné', 'nějaký', 'nějaká', 'nějaké', 'některý', 'některá', 'některé', 'každý', 'každá', 'každé',
-    'mnoho', 'málo', 'několik', 'tolik', 'tolikrát'
+    'mnoho', 'málo', 'několik', 'tolik', 'tolikrát',
+    # Anglická slova
+    'the', 'and', 'project', 'gutenberg', 'you', 'with', 'this', 'work', 'for', 'ebook', 'is'
 }
+
+
+def clean_text(text):
+    """Odstraní anglický text a metadata Project Gutenbergu"""
+    text = re.sub(r'This eBook is for the use of anyone anywhere.*?before using this eBook\.\n\n', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'(Title|Author|Release date|Language|Original publication):[^\n]*\n', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\*{3}\s*(START|END) OF THE PROJECT GUTENBERG.*?\*{3}\n*', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'Updated editions will replace.*?(?=\n\n|\Z)', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'THE FULL PROJECT GUTENBERG.*', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'START:\s*FULL LICENSE.*', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'.*www\.gutenberg\.org.*\n', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\n\n\n+', '\n\n', text)
+    return text.strip()
+
 
 def preprocess_text(text):
     """
     Příprava textu pro analýzu:
+    - čištění od anglického textu
     - převod na lowercase
     - odstranění speciálních znaků
     - odstranění stopwords
     - filtrování krátkých slov
     """
+    # Očisti text od anglického obsahu
+    text = clean_text(text)
+    
     # Převod na malá písmena
     text = text.lower()
     
@@ -95,6 +111,78 @@ def extract_keywords_tfidf(texts, filenames, top_n=10):
     return results
 
 
+def calculate_word_frequencies(texts, filenames, top_n=15):
+    """
+    Počítá frekvence slov v každém textu.
+    
+    Vrátí: seznam tuplů (filename, seznam (slovo, četnost))
+    """
+    print("Počítání frekvencí slov...")
+    results = []
+    
+    for text, filename in zip(texts, filenames):
+        # Příprava textu
+        processed = preprocess_text(text)
+        words = processed.split()
+        
+        # Počítání frekvencí
+        word_freq = Counter(words)
+        
+        # Top N nejčastějších slov
+        top_words = word_freq.most_common(top_n)
+        results.append((filename, top_words))
+    
+    return results
+
+
+def save_results_to_file(keywords_results, frequency_results, output_file="book_analysis_results.txt"):
+    """
+    Uloží výsledky analýzy do textového souboru.
+    """
+    print(f"Ukládání výsledků do {output_file}...")
+    
+    try:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            # Hlavička
+            f.write("="*80 + "\n")
+            f.write("ANALÝZA KNIH - KLÍČOVÁ SLOVA A FREKVENCE\n")
+            f.write("="*80 + "\n")
+            f.write(f"Datum analýzy: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}\n")
+            f.write("="*80 + "\n\n")
+            
+            # Klíčová slova (TF-IDF)
+            f.write("KLÍČOVÁ SLOVA (TF-IDF ANALÝZA)\n")
+            f.write("-"*80 + "\n\n")
+            
+            for filename, keywords in keywords_results:
+                f.write(f"📚 {filename}\n")
+                f.write(f"   Klíčová slova: {', '.join(keywords)}\n\n")
+            
+            # Frekvence slov
+            f.write("\n" + "="*80 + "\n")
+            f.write("FREKVENCE SLOV\n")
+            f.write("-"*80 + "\n\n")
+            
+            for filename, word_freqs in frequency_results:
+                f.write(f"📚 {filename}\n")
+                f.write(f"{'Slovo':<20} {'Četnost':>10}\n")
+                f.write(f"{'-'*20} {'-'*10}\n")
+                
+                for word, freq in word_freqs:
+                    f.write(f"{word:<20} {freq:>10}\n")
+                
+                f.write("\n")
+            
+            # Konec
+            f.write("="*80 + "\n")
+            f.write("Konec analýzy\n")
+            f.write("="*80 + "\n")
+        
+        print(f"✓ Výsledky úspěšně uloženy do {output_file}")
+    except Exception as e:
+        print(f"✗ Chyba při ukládání výsledků: {e}")
+
+
 def analyze_books(directory, top_n=10):
     """Hlavní funkce pro analýzu knih v adresáři"""
     
@@ -126,23 +214,32 @@ def analyze_books(directory, top_n=10):
     print(f"\nCelkem načteno: {len(texts)} souborů\n")
     
     # Extrahuj klíčová slova
-    results = extract_keywords_tfidf(texts, filenames, top_n)
+    keywords_results = extract_keywords_tfidf(texts, filenames, top_n)
     
-    # Výstup výsledků
+    # Počítej frekvence
+    frequency_results = calculate_word_frequencies(texts, filenames, top_n=15)
+    
+    # Výstup výsledků na obrazovku
     print("\n" + "="*70)
-    print("KLÍČOVÁ SLOVA V KNIHÁCH")
+    print("KLÍČOVÁ SLOVA V KNIHÁCH (TF-IDF)")
     print("="*70 + "\n")
     
-    for filename, keywords in results:
+    for filename, keywords in keywords_results:
         print(f"📚 {filename}")
         print(f"   {', '.join(keywords)}")
         print()
+    
+    # Uložení výsledků do souboru
+    output_file = os.path.join(directory, "book_analysis_results.txt")
+    save_results_to_file(keywords_results, frequency_results, output_file)
+    
+    print("\n" + "="*70)
 
 
 def main():
     """Entrypoint"""
     print("\n" + "="*70)
-    print("ANALÝZA KNIH - EXTRAKCE KLÍČOVÝCH SLOV POMOCÍ TF-IDF")
+    print("ANALÝZA KNIH - KLÍČOVÁ SLOVA A FREKVENCE POMOCÍ TF-IDF")
     print("="*70 + "\n")
     
     # Vstup od uživatele
