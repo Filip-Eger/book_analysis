@@ -11,5 +11,7 @@ pkgs.mkShell {
     python313Packages.nltk
     python313Packages.scikit-learn
     python313Packages.numpy
+    python313Packages.matplotlib
+    python313Packages.pandas
   ];
 }
