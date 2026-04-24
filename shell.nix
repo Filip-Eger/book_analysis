@@ -8,5 +8,8 @@ pkgs.mkShell {
     python313Packages.pillow
     python313Packages.requests
     python313Packages.beautifulsoup4
+    python313Packages.nltk
+    python313Packages.scikit-learn
+    python313Packages.numpy
   ];
 }
