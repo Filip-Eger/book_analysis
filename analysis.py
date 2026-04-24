@@ -25,18 +25,6 @@ CZECH_STOPWORDS = {
     'mnoho', 'málo', 'několik', 'tolik', 'tolikrát'
 }
 
-# Definice českých stopwords
-CZECH_STOPWORDS = {
-    'a', 'i', 'nebo', 'ale', 'v', 'na', 's', 'se', 'z', 'si', 'o', 'to', 'k', 'jako', 'je', 'pro', 'který',
-    'která', 'které', 'kterého', 'kterým', 'kterými', 'tento', 'tato', 'toto', 'těch', 'tom', 'tím', 'tomto',
-    'tuto', 'tato', 'těm', 'těmi', 'svůj', 'jeho', 'její', 'jejich', 'nám', 'tě', 'mě', 'ti', 'mu', 'ho', 'ji',
-    'jej', 'nimi', 'jím', 'jich', 'jen', 'jenom', 'právě', 'teprve', 'už', 'však', 'tedy', 'totiž', 'avšak',
-    'přitom', 'nicméně', 'ovšem', 'ať', 'či', 'kterak', 'kterýkoli', 'kdokoliv', 'kdekdo', 'můj', 'tvůj', 'já',
-    'ty', 'on', 'ona', 'ono', 'my', 'vy', 'oni', 'ony', 'sebe', 'sobě', 'sebou', 'sám', 'sama', 'samo', 'jiný',
-    'jiná', 'jiné', 'nějaký', 'nějaká', 'nějaké', 'některý', 'některá', 'některé', 'každý', 'každá', 'každé',
-    'mnoho', 'málo', 'několik', 'tolik', 'tolikrát'
-}
-
 def preprocess_text(text):
     """
     Příprava textu pro analýzu:
